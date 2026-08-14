@@ -34,12 +34,14 @@ func NewService() *Service {
 }
 
 // NewServiceWithClock returns a Service whose timestamps come from now. Pass a
-// fixed clock for deterministic tests. If now is nil the system clock is used.
+// fixed clock for deterministic tests, or a mutable clock that advances as the
+// business process progresses. The provided function is called on every
+// operation that records a timestamp, so a clock that changes over time is
+// observed correctly. If now is nil the system clock is used.
 func NewServiceWithClock(now func() time.Time) *Service {
 	s := NewService()
 	if now != nil {
-		initial := now()
-		s.now = func() time.Time { return initial }
+		s.now = now
 	}
 	return s
 }
