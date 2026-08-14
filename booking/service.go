@@ -38,8 +38,7 @@ func NewService() *Service {
 func NewServiceWithClock(now func() time.Time) *Service {
 	s := NewService()
 	if now != nil {
-		initial := now()
-		s.now = func() time.Time { return initial }
+		s.now = now
 	}
 	return s
 }
