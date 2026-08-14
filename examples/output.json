@@ -1,0 +1,173 @@
+[
+  {
+    "index": 0,
+    "op": "register-room",
+    "ok": true,
+    "room": {
+      "id": "atlas",
+      "name": "Atlas",
+      "capacity": 12
+    }
+  },
+  {
+    "index": 1,
+    "op": "register-room",
+    "ok": true,
+    "room": {
+      "id": "borealis",
+      "name": "Borealis",
+      "capacity": 8
+    }
+  },
+  {
+    "index": 2,
+    "op": "register-room",
+    "ok": false,
+    "error": "room already exists: atlas"
+  },
+  {
+    "index": 3,
+    "op": "book",
+    "ok": true,
+    "reservation": {
+      "id": "res-000001",
+      "roomId": "atlas",
+      "booker": "alice",
+      "start": "2026-08-15T09:00:00Z",
+      "end": "2026-08-15T10:00:00Z",
+      "createdAt": "2026-08-15T00:40:43.408846+08:00",
+      "cancelled": false
+    }
+  },
+  {
+    "index": 4,
+    "op": "book",
+    "ok": true,
+    "reservation": {
+      "id": "res-000001",
+      "roomId": "atlas",
+      "booker": "alice",
+      "start": "2026-08-15T09:00:00Z",
+      "end": "2026-08-15T10:00:00Z",
+      "createdAt": "2026-08-15T00:40:43.408846+08:00",
+      "cancelled": false
+    }
+  },
+  {
+    "index": 5,
+    "op": "book",
+    "ok": false,
+    "error": "time conflict with reservation res-000001"
+  },
+  {
+    "index": 6,
+    "op": "book",
+    "ok": true,
+    "reservation": {
+      "id": "res-000002",
+      "roomId": "atlas",
+      "booker": "carol",
+      "start": "2026-08-15T10:00:00Z",
+      "end": "2026-08-15T11:00:00Z",
+      "createdAt": "2026-08-15T00:40:43.408852+08:00",
+      "cancelled": false
+    }
+  },
+  {
+    "index": 7,
+    "op": "book",
+    "ok": true,
+    "reservation": {
+      "id": "res-000003",
+      "roomId": "borealis",
+      "booker": "dave",
+      "start": "2026-08-15T09:00:00Z",
+      "end": "2026-08-15T17:00:00Z",
+      "createdAt": "2026-08-15T00:40:43.408853+08:00",
+      "cancelled": false
+    }
+  },
+  {
+    "index": 8,
+    "op": "available",
+    "ok": true,
+    "available": {
+      "start": "2026-08-15T09:30:00Z",
+      "end": "2026-08-15T10:00:00Z",
+      "rooms": []
+    }
+  },
+  {
+    "index": 9,
+    "op": "cancel",
+    "ok": true,
+    "reservation": {
+      "id": "res-000001",
+      "roomId": "atlas",
+      "booker": "alice",
+      "start": "2026-08-15T09:00:00Z",
+      "end": "2026-08-15T10:00:00Z",
+      "createdAt": "2026-08-15T00:40:43.408846+08:00",
+      "cancelled": true,
+      "cancelledAt": "2026-08-15T00:40:43.408857+08:00"
+    }
+  },
+  {
+    "index": 10,
+    "op": "cancel",
+    "ok": true,
+    "reservation": {
+      "id": "res-000001",
+      "roomId": "atlas",
+      "booker": "alice",
+      "start": "2026-08-15T09:00:00Z",
+      "end": "2026-08-15T10:00:00Z",
+      "createdAt": "2026-08-15T00:40:43.408846+08:00",
+      "cancelled": true,
+      "cancelledAt": "2026-08-15T00:40:43.408857+08:00"
+    }
+  },
+  {
+    "index": 11,
+    "op": "available",
+    "ok": true,
+    "available": {
+      "start": "2026-08-15T09:30:00Z",
+      "end": "2026-08-15T10:00:00Z",
+      "rooms": [
+        {
+          "id": "atlas",
+          "name": "Atlas",
+          "capacity": 12
+        }
+      ]
+    }
+  },
+  {
+    "index": 12,
+    "op": "utilization",
+    "ok": true,
+    "utilization": {
+      "date": "2026-08-15",
+      "rooms": [
+        {
+          "roomId": "atlas",
+          "roomName": "Atlas",
+          "bookedSeconds": 3600,
+          "availableSeconds": 32400,
+          "utilization": 0.1111111111111111
+        },
+        {
+          "roomId": "borealis",
+          "roomName": "Borealis",
+          "bookedSeconds": 28800,
+          "availableSeconds": 32400,
+          "utilization": 0.8888888888888888
+        }
+      ],
+      "totalBookedSeconds": 32400,
+      "totalAvailableSeconds": 64800,
+      "utilization": 0.5
+    }
+  }
+]

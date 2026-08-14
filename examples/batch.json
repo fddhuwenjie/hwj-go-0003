@@ -1,0 +1,15 @@
+[
+  {"op": "register-room", "id": "atlas", "name": "Atlas", "capacity": 12},
+  {"op": "register-room", "id": "borealis", "name": "Borealis", "capacity": 8},
+  {"op": "register-room", "id": "atlas", "name": "Dup", "capacity": 1},
+  {"op": "book", "roomId": "atlas", "start": "2026-08-15T09:00:00Z", "end": "2026-08-15T10:00:00Z", "booker": "alice", "clientRequestId": "k1"},
+  {"op": "book", "roomId": "atlas", "start": "2026-08-15T09:00:00Z", "end": "2026-08-15T10:00:00Z", "booker": "alice", "clientRequestId": "k1"},
+  {"op": "book", "roomId": "atlas", "start": "2026-08-15T09:30:00Z", "end": "2026-08-15T10:30:00Z", "booker": "bob"},
+  {"op": "book", "roomId": "atlas", "start": "2026-08-15T10:00:00Z", "end": "2026-08-15T11:00:00Z", "booker": "carol"},
+  {"op": "book", "roomId": "borealis", "start": "2026-08-15T09:00:00Z", "end": "2026-08-15T17:00:00Z", "booker": "dave"},
+  {"op": "available", "start": "2026-08-15T09:30:00Z", "end": "2026-08-15T10:00:00Z"},
+  {"op": "cancel", "reservationId": "res-000001"},
+  {"op": "cancel", "reservationId": "res-000001"},
+  {"op": "available", "start": "2026-08-15T09:30:00Z", "end": "2026-08-15T10:00:00Z"},
+  {"op": "utilization", "date": "2026-08-15", "location": "UTC", "open": "09:00", "close": "18:00"}
+]
