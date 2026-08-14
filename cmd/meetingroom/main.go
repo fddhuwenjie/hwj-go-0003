@@ -186,11 +186,5 @@ func writeOutput(path string, results []result) error {
 		_, err := os.Stdout.Write(out)
 		return err
 	}
-	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0o644)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	_, err = file.Write(out)
-	return err
+	return os.WriteFile(path, out, 0o644)
 }
