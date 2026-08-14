@@ -186,7 +186,7 @@ func writeOutput(path string, results []result) error {
 		_, err := os.Stdout.Write(out)
 		return err
 	}
-	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0o644)
+	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
 	if err != nil {
 		return err
 	}
