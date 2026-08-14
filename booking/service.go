@@ -60,7 +60,7 @@ func (s *Service) RegisterRoom(req RegisterRoomRequest) (Room, error) {
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if _, exists := s.rooms[req.ID]; exists {
+	if _, exists := s.rooms[id]; exists {
 		return Room{}, fmt.Errorf("%w: %s", ErrRoomAlreadyExists, id)
 	}
 	room := Room{ID: id, Name: name, Capacity: req.Capacity}

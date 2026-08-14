@@ -83,6 +83,70 @@ func TestRegisterRoom(t *testing.T) {
 	}
 }
 
+// TestRegisterRoom_DuplicateWithWhitespace verifies that registering a room
+// whose id differs from an existing one only by surrounding whitespace is
+// treated as a duplicate. The failed request must not overwrite the stored
+// room's name or capacity. A previously unused id with surrounding whitespace
+// must still be accepted in normalized form and be bookable.
+func TestRegisterRoom_DuplicateWithWhitespace(t *testing.T) {
+	clock, _ := fixedClock()
+	s := NewServiceWithClock(clock)
+
+	// Original room.
+	r1 := mustRoom(t, s, RegisterRoomRequest{ID: "atlas", Name: "Atlas Tower", Capacity: 12})
+	if r1.Name != "Atlas Tower" || r1.Capacity != 12 {
+		t.Fatalf("original room = %+v", r1)
+	}
+
+	// Whitespace-variant id must be reported as a duplicate.
+	_, err := s.RegisterRoom(RegisterRoomRequest{ID: " atlas ", Name: "Overwrite", Capacity: 99})
+	if !errors.Is(err, ErrRoomAlreadyExists) {
+		t.Fatalf("whitespace-variant id: want ErrRoomAlreadyExists, got %v", err)
+	}
+
+	// The failed request must not have changed the stored room. The only public
+	// read path that surfaces stored room data is availability.
+	avail, aerr := s.Available(AvailabilityRequest{Start: day(1, 0), End: day(2, 0)})
+	if aerr != nil {
+		t.Fatalf("available: %v", aerr)
+	}
+	var stored Room
+	for _, rm := range avail.Rooms {
+		if rm.ID == "atlas" {
+			stored = rm
+		}
+	}
+	if stored.ID == "" {
+		t.Fatalf("original room atlas not found after failed duplicate")
+	}
+	if stored.Name != "Atlas Tower" {
+		t.Errorf("stored name = %q, want %q (failed request must not mutate state)", stored.Name, "Atlas Tower")
+	}
+	if stored.Capacity != 12 {
+		t.Errorf("stored capacity = %d, want 12 (failed request must not mutate state)", stored.Capacity)
+	}
+
+	// Booking the original room by its normalized id must still work.
+	if _, berr := s.Book(BookRequest{RoomID: "atlas", Start: day(9, 0), End: day(10, 0), Booker: "alice"}); berr != nil {
+		t.Fatalf("book original room after failed duplicate: %v", berr)
+	}
+
+	// A previously unused id with surrounding whitespace is still accepted in
+	// normalized form and can be booked.
+	r2 := mustRoom(t, s, RegisterRoomRequest{ID: " nova ", Name: " Nova Hall ", Capacity: 6})
+	if r2.ID != "nova" || r2.Name != "Nova Hall" || r2.Capacity != 6 {
+		t.Fatalf("normalized new room = %+v", r2)
+	}
+	if _, berr := s.Book(BookRequest{RoomID: "nova", Start: day(9, 0), End: day(10, 0), Booker: "bob"}); berr != nil {
+		t.Fatalf("book whitespace-normalized new room: %v", berr)
+	}
+	// Booking by the whitespace form of the same id must also resolve to the
+	// same room (the request id is trimmed before lookup).
+	if _, berr := s.Book(BookRequest{RoomID: " nova ", Start: day(10, 0), End: day(11, 0), Booker: "carol"}); berr != nil {
+		t.Fatalf("book via whitespace form of normalized id: %v", berr)
+	}
+}
+
 func TestBook_BasicAndBoundaries(t *testing.T) {
 	clock, now := fixedClock()
 	s := NewServiceWithClock(clock)
