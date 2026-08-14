@@ -251,8 +251,7 @@ func (s *Service) Utilization(req UtilizationRequest) (UtilizationResponse, erro
 			if r.Cancelled {
 				continue
 			}
-			overlap := clampDuration(r.Start, r.End, windowStart, windowEnd)
-			booked += time.Duration(int64(overlap.Seconds())) * time.Second
+			booked += clampDuration(r.Start, r.End, windowStart, windowEnd)
 		}
 		ru := RoomUtilization{
 			RoomID:           room.ID,
