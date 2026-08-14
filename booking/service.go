@@ -276,10 +276,14 @@ func (s *Service) Utilization(req UtilizationRequest) (UtilizationResponse, erro
 
 // overlaps reports whether [s1,e1) and [s2,e2) share any time. Adjacent
 // intervals (e1 == s2 or e2 == s1) do not overlap.
+//
+// Comparison is by instant, not wall-clock representation: two times that
+// denote the same instant but use different time-zone offsets (for example
+// 10:00Z and 05:00-05:00) must be treated as equal. time.Time.Before compares
+// the underlying instant regardless of the associated location, so it correctly
+// handles reservations expressed in different time zones.
 func overlaps(s1, e1, s2, e2 time.Time) bool {
-	const wallClockLayout = "2006-01-02T15:04:05.999999999"
-	return s1.Format(wallClockLayout) < e2.Format(wallClockLayout) &&
-		s2.Format(wallClockLayout) < e1.Format(wallClockLayout)
+	return s1.Before(e2) && s2.Before(e1)
 }
 
 // clampDuration returns the duration that [rStart, rEnd) overlaps

@@ -585,6 +585,99 @@ func assertNoOverlaps(t *testing.T, s *Service, roomID string) {
 	}
 }
 
+// mustParseRFC3339 parses an RFC3339 timestamp, failing the test on error. It
+// preserves the input's time-zone offset (including negative offsets), which is
+// how JSON-decoded BookRequest fields arrive at the service.
+func mustParseRFC3339(t *testing.T, s string) time.Time {
+	t.Helper()
+	ts, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		t.Fatalf("time.Parse(%q): %v", s, err)
+	}
+	return ts
+}
+
+// TestBook_CrossTimeZoneConflict reproduces the cross-timezone double-booking
+// defect: a room reserved with a UTC interval must still reject an overlapping
+// reservation whose RFC3339 instants use a negative offset. Boundary-adjacent
+// reservations across time zones remain valid, and Available agrees with Book.
+func TestBook_CrossTimeZoneConflict(t *testing.T) {
+	clock, _ := fixedClock()
+	s := NewServiceWithClock(clock)
+	mustRoom(t, s, RegisterRoomRequest{ID: "A", Name: "Atlas", Capacity: 10})
+
+	// Reserve 10:00-11:00 UTC.
+	utcStart := mustParseRFC3339(t, "2026-08-15T10:00:00Z")
+	utcEnd := mustParseRFC3339(t, "2026-08-15T11:00:00Z")
+	r1 := mustBook(t, s, BookRequest{RoomID: "A", Start: utcStart, End: utcEnd, Booker: "alice"})
+
+	// 05:30-06:30 at -05:00 is 10:30-11:30 UTC: it overlaps the first booking
+	// and must be rejected even though its wall-clock representation differs.
+	negStart := mustParseRFC3339(t, "2026-08-15T05:30:00-05:00")
+	negEnd := mustParseRFC3339(t, "2026-08-15T06:30:00-05:00")
+	if !negStart.Equal(utcStart.Add(30 * time.Minute)) {
+		t.Fatalf("setup invariant: %v != %v+30m", negStart, utcStart)
+	}
+	_, err := s.Book(BookRequest{RoomID: "A", Start: negStart, End: negEnd, Booker: "bob"})
+	if !errors.Is(err, ErrConflict) {
+		t.Fatalf("overlapping negative-offset book: want ErrConflict, got %v", err)
+	}
+	var ce *ConflictError
+	if !errors.As(err, &ce) || ce.ConflictingReservationID != r1.ID {
+		t.Fatalf("conflict should point at %s, got %+v", r1.ID, err)
+	}
+
+	// Available must agree: the overlapping window is not free for room A.
+	resp, err := s.Available(AvailabilityRequest{Start: negStart, End: negEnd})
+	if err != nil {
+		t.Fatalf("available: %v", err)
+	}
+	if ids := roomIDs(resp); len(ids) != 0 {
+		t.Fatalf("available for overlapping negative-offset window = %v, want []", ids)
+	}
+
+	// Boundary case: a reservation starting exactly at the first reservation's
+	// ending instant, expressed with a negative offset, is adjacent and valid.
+	// 06:00 at -05:00 is 11:00 UTC == r1.End.
+	adjStart := mustParseRFC3339(t, "2026-08-15T06:00:00-05:00")
+	adjEnd := mustParseRFC3339(t, "2026-08-15T07:00:00-05:00")
+	if !adjStart.Equal(utcEnd) {
+		t.Fatalf("setup invariant: %v != %v", adjStart, utcEnd)
+	}
+
+	// Available agrees the adjacent slot is free for room A before booking.
+	resp, err = s.Available(AvailabilityRequest{Start: adjStart, End: adjEnd})
+	if err != nil {
+		t.Fatalf("available adjacent: %v", err)
+	}
+	if ids := roomIDs(resp); !equal(ids, []string{"A"}) {
+		t.Fatalf("available for adjacent negative-offset window = %v, want [A]", ids)
+	}
+
+	// Book the adjacent slot: succeeds because it only shares a boundary.
+	r2 := mustBook(t, s, BookRequest{RoomID: "A", Start: adjStart, End: adjEnd, Booker: "carol"})
+	if r2.ID == r1.ID {
+		t.Fatalf("adjacent negative-offset book should create a new reservation")
+	}
+
+	// After booking, Available agrees the slot is now occupied.
+	resp, err = s.Available(AvailabilityRequest{Start: adjStart, End: adjEnd})
+	if err != nil {
+		t.Fatalf("available after adjacent book: %v", err)
+	}
+	if ids := roomIDs(resp); len(ids) != 0 {
+		t.Fatalf("available for booked adjacent window = %v, want []", ids)
+	}
+}
+
+func roomIDs(resp AvailabilityResponse) []string {
+	out := make([]string, len(resp.Rooms))
+	for i, r := range resp.Rooms {
+		out[i] = r.ID
+	}
+	return out
+}
+
 func equal(a, b []string) bool {
 	if len(a) != len(b) {
 		return false
